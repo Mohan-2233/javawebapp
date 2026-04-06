@@ -53,6 +53,24 @@ pipeline {
                     }
                 } // End of timeout
             }
-        }
     }
+
+    stage('Upload to Nexus') {
+      steps{
+        nexusArtifactUploader artifacts: [[artifactId: 'SimpleWebApplication\'', classifier: '', file: 'target/SimpleWebApplication.war', type: 'war']], credentialsId: 'nexus-jenkins', groupId: 'com.maven', nexusUrl: '172.31.37.250:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-snapshots', version: '1.0.0-SNAPSHOT'
+      }
+    }
+    stage('Deploy to Tomcat') {
+      agent {
+        label "ansible"
+      }
+      steps{
+        script {
+          withCredentials([usernamePassword(credentialsId: 'nexus-jenkins', usernameVariable: 'nexus_username', passwordVariable: 'nexus_password')]) {
+            sh 'ansible-playbook -i ansible/hosts ansible/playbook.yml'
+          }
+        }
+      }
+    }
+  }
 }
