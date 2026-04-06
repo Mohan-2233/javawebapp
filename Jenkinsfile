@@ -1,37 +1,48 @@
 pipeline {
-  agent {
-    label "Java"
-  }
-  stages {
-    stage('Build') {
-      steps{
-        sh 'mvn clean install'
-      }
+    agent {
+        label ('java')
     }
-    stage('jacoco') {
-      steps{
-        jacoco()
-      }
-    }
-
-    stage('SonarQube analysis') {
-      steps{
-        script {
-          def scannerHome = tool 'scanner_sonar';
-          withSonarQubeEnv('jenkins-sonar') {
-            sh """
-              ${scannerHome}/bin/sonar-scanner \
-              -Dsonar.projectKey=javawebapp \
-              -Dsonar.projectName=javawebapp \
-              -Dsonar.projectVersion=1.0 \
-              -Dsonar.java.binaries='target/classes'
-            """
-          }
+    stages {
+        stage ('Checkout SCM') {
+            steps {
+                checkout scmGit(
+                    branches: [[name: '*/main']],
+                    extensions: [],
+                    userRemoteConfigs: [[
+                        credentialsId: 'github-cred',
+                        url: 'https://github.com/Mohan-2233/javawebapp.git'
+                    ]]
+                )
+            }
         }
-      }
-    }
-
-    stage("Sonar Quality Gate Check") {
+        stage ('Build and Test') {
+            steps {
+                sh 'mvn clean verify'
+            }
+        }
+        stage ('SonarQube Analysis') {
+            steps {
+                script {
+                    def scannerHome = tool 'sonarscanner'
+                    withSonarQubeEnv('sonar-cred') {
+                        sh """
+                            ${scannerHome}/bin/sonar-scanner \
+                              -Dsonar.projectKey=javawebapp \
+                              -Dsonar.projectName=javawebapp \
+                              -Dsonar.projectVersion=${BUILD_NUMBER} \
+                                                            -Dsonar.scm.provider=git \
+                              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+                              -Dsonar.sources=src/main/java,src/main/webapp \
+                              -Dsonar.tests=src/test/java \
+                              -Dsonar.java.binaries=target/classes \
+                              -Dsonar.java.test.binaries=target/test-classes \
+                              -Dsonar.junit.reportPaths=target/surefire-reports
+                            """
+                    }
+                }
+            }
+        }
+        stage("Sonar Quality Gate Check") {
             steps {
                 timeout(time: 1, unit: 'HOURS') {
                     script {
@@ -42,24 +53,6 @@ pipeline {
                     }
                 } // End of timeout
             }
-    }
-
-    stage('Upload to Nexus') {
-      steps{
-        nexusArtifactUploader artifacts: [[artifactId: 'SimpleWebApplication\'', classifier: '', file: 'target/SimpleWebApplication.war', type: 'war']], credentialsId: 'nexus-jenkins', groupId: 'com.maven', nexusUrl: '172.31.37.250:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-snapshots', version: '1.0.0-SNAPSHOT'
-      }
-    }
-    stage('Deploy to Tomcat') {
-      agent {
-        label "ansible"
-      }
-      steps{
-        script {
-          withCredentials([usernamePassword(credentialsId: 'nexus-jenkins', usernameVariable: 'nexus_username', passwordVariable: 'nexus_password')]) {
-            sh 'ansible-playbook -i ansible/hosts ansible/playbook.yml'
-          }
         }
-      }
     }
-  }
 }
