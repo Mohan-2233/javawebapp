@@ -62,7 +62,7 @@ pipeline {
     }
     stage('Deploy to Tomcat') {
       agent {
-        label "ansible"
+        label "java"
       }
       steps{
         script {
