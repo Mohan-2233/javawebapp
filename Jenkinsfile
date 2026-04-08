@@ -57,7 +57,7 @@ pipeline {
 
     stage('Upload to Nexus') {
       steps{
-        nexusArtifactUploader artifacts: [[artifactId: 'SimpleWebApplication\'', classifier: '', file: 'target/SimpleWebApplication.war', type: 'war']], credentialsId: 'nexus-cred', groupId: 'com.maven', nexusUrl: '172.31.47.166:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-snapshots', version: '1.0.0-SNAPSHOT'
+        nexusArtifactUploader artifacts: [[artifactId: 'SimpleWebApplication\'', classifier: '', file: 'target/SimpleWebApplication.war', type: 'war']], credentialsId: 'nexus-cred', groupId: 'com.maven', nexusUrl: '172.31.47.166:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-snapshots', version: '1.0.1-SNAPSHOT'
       }
     }
         stage('Deploy to Dev') {
@@ -80,7 +80,7 @@ pipeline {
 
                 # Download latest artifact from Nexus
                 curl -fL -u "$NEXUS_USER:$NEXUS_PASS" \
-                "http://172.31.44.91:8081/service/rest/v1/search/assets/download?sort=version&repository=maven-snapshots&maven.groupId=com.maven&maven.artifactId=SimpleWebApplication&maven.baseVersion=1.0.1-SNAPSHOT&maven.extension=war" \
+                "http://172.31.47.166:8081/service/rest/v1/search/assets/download?sort=version&repository=maven-snapshots&maven.groupId=com.maven&maven.artifactId=SimpleWebApplication&maven.baseVersion=1.0.1-SNAPSHOT&maven.extension=war" \
                 -o /tmp/SimpleWebApplication.war
 
                 # Deploy WAR
