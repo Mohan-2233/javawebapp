@@ -60,6 +60,38 @@ pipeline {
         nexusArtifactUploader artifacts: [[artifactId: 'SimpleWebApplication\'', classifier: '', file: 'target/SimpleWebApplication.war', type: 'war']], credentialsId: 'nexus-cred', groupId: 'com.maven', nexusUrl: '172.31.47.166:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-snapshots', version: '1.0.0-SNAPSHOT'
       }
     }
-   }
-  }
+        stage('Deploy to Dev') {
+    agent {
+        label 'tomcat'
+    }
+    steps {
+        withCredentials([usernamePassword(
+            credentialsId: 'nexus-cred',
+            usernameVariable: 'NEXUS_USER',
+            passwordVariable: 'NEXUS_PASS'
+        )]) {
+            sh '''
+                # Stop Tomcat
+                bash /home/tomcat/tomcatserver/bin/shutdown.sh
+
+                # Backup old WAR
+                mv /home/tomcat/tomcatserver/webapps/SimpleWebApplication.war \
+                   /home/tomcat/tomcatserver/webapps/SimpleWebApplication.war.bak || true
+
+                # Download latest artifact from Nexus
+                curl -fL -u "$NEXUS_USER:$NEXUS_PASS" \
+                "http://172.31.44.91:8081/service/rest/v1/search/assets/download?sort=version&repository=maven-snapshots&maven.groupId=com.maven&maven.artifactId=SimpleWebApplication&maven.baseVersion=1.0.1-SNAPSHOT&maven.extension=war" \
+                -o /tmp/SimpleWebApplication.war
+
+                # Deploy WAR
+                cp /tmp/SimpleWebApplication.war /home/tomcat/tomcatserver/webapps/
+
+                # Start Tomcat
+                bash /home/tomcat/tomcatserver/bin/startup.sh
+            '''
+        }
+    }
+}
+}
+}
 
