@@ -80,8 +80,8 @@ pipeline {
 
                 # Download latest artifact from Nexus
                 curl -fL -u "$NEXUS_USER:$NEXUS_PASS" \
-                "http://172.31.47.166:8081/service/rest/v1/search/assets/download?sort=version&repository=maven-snapshots&maven.groupId=com.maven&maven.artifactId=SimpleWebApplication&maven.baseVersion=1.0.1-SNAPSHOT&maven.extension=war" \
-                -o /tmp/SimpleWebApplication.war
+                       "http://172.31.47.166:8081/repository/maven-snapshots/com/maven/SimpleWebApplication/1.0.1-SNAPSHOT/SimpleWebApplication-1.0.1-SNAPSHOT.war" \
+                       -o /tmp/SimpleWebApplication.war
 
                 # Deploy WAR
                 cp /tmp/SimpleWebApplication.war /home/tomcat/tomcatserver/webapps/
