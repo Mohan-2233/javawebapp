@@ -61,38 +61,38 @@ pipeline {
       }
     }
         stage('Deploy to Dev') {
-    agent {
-        label 'tomcat'
-    }
-    steps {
-        withCredentials([usernamePassword(
-            credentialsId: 'nexus-cred',
-            usernameVariable: 'NEXUS_USER',
-            passwordVariable: 'NEXUS_PASS'
-        )]) {
-            sh '''
-                # Stop Tomcat
-                bash /home/tomcat/tomcatserver/bin/shutdown.sh
+            agent {
+                label 'tomcat'
+                    }
+            steps {
+                withCredentials([usernamePassword(
+                credentialsId: 'nexus-cred',
+                usernameVariable: 'NEXUS_USER',
+                passwordVariable: 'NEXUS_PASS'
+                )]) {
+                    sh '''
+                    # Stop Tomcat
+                    bash /home/tomcat/tomcatserver/bin/shutdown.sh
 
-                # Backup old WAR
-                mv /home/tomcat/tomcatserver/webapps/SimpleWebApplication.war \
+                    # Backup old WAR
+                    mv /home/tomcat/tomcatserver/webapps/SimpleWebApplication.war \
                    /home/tomcat/tomcatserver/webapps/SimpleWebApplication.war.bak || true
 
-                # Download latest artifact from Nexus
-                curl -fL -u "$NEXUS_USER:$NEXUS_PASS" \
+                    # Download latest artifact from Nexus
+                    curl -fL -u "$NEXUS_USER:$NEXUS_PASS" \
                        "http://172.31.47.166:8081/repository/maven-snapshots/com/maven/SimpleWebApplication/1.0.1-SNAPSHOT/SimpleWebApplication-1.0.1-SNAPSHOT.war" \
                        -o /tmp/SimpleWebApplication.war
 
-                # Clean Deploy WAR
-                rm -rf /home/tomcat/tomcatserver/webapps/SimpleWebApplication/
-                cp /tmp/SimpleWebApplication.war /home/tomcat/tomcatserver/webapps/
+                    # Clean Deploy WAR
+                    rm -rf /home/tomcat/tomcatserver/webapps/SimpleWebApplication/
+                    cp /tmp/SimpleWebApplication.war /home/tomcat/tomcatserver/webapps/
 
-                # Start Tomcat
-                bash /home/tomcat/tomcatserver/bin/startup.sh
-            '''
+                    # Start Tomcat
+                    bash /home/tomcat/tomcatserver/bin/startup.sh
+                    '''
+                    }
+                }
+            }
         }
     }
-}
-}
-}
 
